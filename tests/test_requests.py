@@ -29,6 +29,22 @@ def test_request_url(test_client_factory: TestClientFactory) -> None:
     assert response.json() == {"method": "GET", "url": "https://example.org:123/"}
 
 
+def test_request_url_without_host_header_preserves_double_slash_path() -> None:
+    scope: Scope = {
+        "type": "http",
+        "scheme": "http",
+        "path": "//evil.example/x",
+        "query_string": b"a=1",
+        "headers": [],
+        "server": None,
+    }
+    request = Request(scope)
+    assert request.url.netloc == ""
+    assert request.url.path == "//evil.example/x"
+    assert request.url.query == "a=1"
+    assert str(request.url) == "////evil.example/x?a=1"
+
+
 def test_request_query_params(test_client_factory: TestClientFactory) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive)
